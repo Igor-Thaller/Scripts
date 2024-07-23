@@ -137,7 +137,7 @@ function attemptMinikubeStart {
     line
 
     echo "Attempting to start minikube"
-    minikube start
+    minikube start --force --driver=docker
 
     line
 }
