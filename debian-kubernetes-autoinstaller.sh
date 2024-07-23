@@ -180,7 +180,7 @@ importantInformationSection
 line
 
 # Collect necessary information for the program to run
-read version -p "Enter the version you want to use or type stable (e.g. v1.30.0): "
+read -p "Enter the version you want to use or type stable (e.g. v1.30.0): " version
 
 line
 
