@@ -4,10 +4,6 @@ function line {
     echo -e "\033[31m__________________________________________________________\033[0m"
 }
 
-function dashLine {
-    echo -e "\033[31m..........................................................\033[0m"
-}
-
 # Color text ouput
 green_color() {
   GREEN='\033[0;32m'
@@ -20,7 +16,6 @@ green_color() {
 # Info seciton with requirements
 function importantInformationSection {
     green_color "Important information"
-    dashLine
     echo "1. Please make sure that you run this program in sudo mode"
     echo "2. Two CPUs or more"
     echo "3. 2GB of free memory"
@@ -60,8 +55,6 @@ function installDocker {
     green_color "Installing latest docker version"
     sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-    dashLine
-
     # Testing docker
     green_color "Testing docker"
     sudo docker run hello-world
@@ -70,7 +63,6 @@ function installDocker {
 # Combining uninstall and install docker for reinstall
 function reinstallDocker {
     removeDocker
-    dashLine
     installDocker
 }
 
@@ -91,14 +83,10 @@ function fetchAssociatedVersionData {
         sudo curl -LO https://dl.k8s.io/release/${version}/bin/linux/amd64/kubectl
     fi
 
-    dashLine
-
     # Validate
     green_color "Validating the binary"
     
     sudo curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"
-
-    dashLine
 
     green_color "Validation results"
     echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
@@ -121,8 +109,6 @@ function installKubectl {
     # Install kubectl
     green_color "Installing kubectl cli tool"
     sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-
-    dashLine
 
     # Validating kubectl
     green_color "Validating kubectl"
