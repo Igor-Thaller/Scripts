@@ -1,17 +1,26 @@
 # ---------------------------------------------Functions--------------------------------------------
 # Basic lines
 function line {
-    echo "----------------------------------------------------------"
+    echo -e "\033[31m "----------------------------------------------------------" \033[0m"
+    echo 
 }
 
 function dashLine {
-    echo ".........................................................."
+    echo -e "\033[31m .......................................................... \033[0m"
 }
+
+# Color text ouput
+green_color() {
+  GREEN='\033[0;32m'
+  RESET='\033[0m'
+  echo -e "${GREEN}$1${RESET}"
+}
+
 
 # Other parts
 # Info seciton with requirements
 function importantInformationSection {
-    echo "Important information"
+    green_color "Important information"
     dashLine
     echo "1. Please make sure that you run this program in sudo mode"
     echo "2. Two CPUs or more"
@@ -24,7 +33,7 @@ function importantInformationSection {
 # Removing docker
 function removeDocker {
     # Removing docker if installed
-    echo "Removing docker if installed"
+    green_color "Removing docker if installed"
     for pkg in docker.io docker-doc docker-compose podman-docker containerd runc; do sudo apt-get remove $pkg; done
     sudo apt-get purge aufs-tools docker-ce docker-ce-cli containerd.io pigz cgroupfs-mount -y
     sudo apt-get purge kubeadm kubernetes-cni -y
@@ -37,22 +46,25 @@ function removeDocker {
 }
 
 function installDocker {
+    green_color "Installing docker"
     sudo apt-get install ca-certificates curl
     sudo install -m 0755 -d /etc/apt/keyrings
     sudo curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
     sudo chmod a+r /etc/apt/keyrings/docker.asc
 
-    echo "Adding the repositories to the apt sources"
+    green_color "Adding the repositories to the apt sources"
     # Add the repository to Apt sources:
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
     sudo apt update
 
     # Install latest version
-    echo "Installing latest docker version"
+    green_color "Installing latest docker version"
     sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
+    dashLine
+
     # Testing docker
-    echo "Testing docker"
+    green_color "Testing docker"
     sudo docker run hello-world
 }
 
@@ -66,14 +78,14 @@ function reinstallDocker {
 # Package updates
 function updatePackages {
     # Updating packages
-    echo "Updating all apt packages"
+    green_color "Updating all apt packages"
     sudo apt update
     sudo apt dist-upgrade
 }
 
 # Fetching of kubernetes by specified version
 function fetchAssociatedVersionData {
-    echo "Fetching data"
+    green_color "Fetching data associated with the provided version"
     if [version != "stable"]; then
         sudo curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
     else
@@ -83,38 +95,43 @@ function fetchAssociatedVersionData {
     dashLine
 
     # Validate
-    echo "Validating the binary"
-     sudo curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"
+    green_color "Validating the binary"
+    
+    sudo curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"
 
-    echo "Validation results"
+    dashLine
+
+    green_color "Validation results"
     echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
 }
 
 # Installing minkube
 function installMinikube {
-    echo "Installing minikube"
+    green_color "Installing minikube"
     sudo curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
     sudo install minikube-linux-amd64 /usr/local/bin/minikube && rm minikube-linux-amd64
 }
 
 function attemptMinikubeStart {
-    echo "Attempting to start minikube"
+    green_color "Attempting to start minikube"
     # TODO: Implement this without --force
     minikube start --force --driver=docker
 }
 
 function installKubectl {
     # Install kubectl
-    echo "Installing kubectl cli tool"
+    green_color "Installing kubectl cli tool"
     sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 
+    dashLine
+
     # Validating kubectl
-    echo "Validating kubectl"
+    green_color "Validating kubectl"
     kubectl version --client --output=yaml
 }
 
 function showFinishMessage {
-    echo "Everything has been installed!"
+    green_color "Everything has been installed!"
 }
 
 
