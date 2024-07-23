@@ -47,12 +47,11 @@ function installDocker {
 
     # Install latest version
     green_color "Installing latest docker version"
-    sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
+    sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-    green_color "Installing docker ce"
-    # Install Docker CE.
-    sudo apt-get update
-    sudo apt-get install docker-ce docker-ce-cli containerd.io -y
+    # Testing docker
+    green_color "Testing docker"
+    sudo docker run hello-world
 }
 
 # Combining uninstall and install docker for reinstall
@@ -66,17 +65,19 @@ function updatePackages {
     # Updating packages
     green_color "Updating all apt packages"
     sudo apt update
-    sudo apt dist-upgrade -y
+    sudo apt dist-upgrade
 }
 
 # Fetching of kubernetes by specified version
 function fetchAssociatedVersionData {
     green_color "Fetching data associated with the provided version"
-    if [ $version != "stable" ]; then
+    if [$version != "stable"]; then
         sudo curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
     else
         sudo curl -LO https://dl.k8s.io/release/${version}/bin/linux/amd64/kubectl
     fi
+
+
 }
 
 # Validate the binary
@@ -84,7 +85,7 @@ function validateBinary {
     # Validate
     green_color "Validating the binary"
 
-    if [ $version == "stable" ]; then
+    if [version == "stable"]; then
         sudo curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"
     else
         sudo curl -LO "https://dl.k8s.io/release/${version}/bin/linux/amd64/kubectl.sha256"
@@ -94,6 +95,19 @@ function validateBinary {
     echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
 }
 
+# Installing minkube
+function installMinikube {
+    green_color "Installing minikube"
+    sudo curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+    sudo install minikube-linux-amd64 /usr/local/bin/minikube && rm minikube-linux-amd64
+}
+
+# Attempting to start minikube
+function attemptMinikubeStart {
+    green_color "Attempting to start minikube"
+    # TODO: Implement this without --force
+    minikube start --force --driver=docker
+}
 
 # Installing the kubectl cli tool
 function installKubectl {
@@ -112,6 +126,19 @@ function showFinishMessage {
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 # ----------------------------------------Program--------------------------------------------------
 importantInformationSection
 
@@ -122,4 +149,6 @@ updatePackages
 reinstallDocker
 fetchAssociatedVersionData
 installKubectl
+installMinikube
 showFinishMessage
+attemptMinikubeStart
