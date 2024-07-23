@@ -1,9 +1,4 @@
 # ---------------------------------------------Functions--------------------------------------------
-# Basic lines
-function line {
-    echo -e "\033[31m__________________________________________________________\033[0m"
-}
-
 # Color text ouput
 green_color() {
   GREEN='\033[0;32m'
@@ -134,41 +129,15 @@ function showFinishMessage {
 
 
 # ----------------------------------------Program--------------------------------------------------
-line
 importantInformationSection
 
 # Collect necessary information for the program to run
 read -p "Enter the version you want to use or type stable (e.g. v1.30.0): " version
 
-# Line break
-line
 updatePackages
-
-# Line break
-line
 reinstallDocker
-
-
-# Line break
-line
 fetchAssociatedVersionData
-
-
-# Line break
-line
 installKubectl
-
-
-# Line break
-line
 installMinikube
-
-
-# Line break
-line
 showFinishMessage
-
-
-# Line break
-line
 attemptMinikubeStart
