@@ -6,7 +6,6 @@ green_color() {
   echo -e "${GREEN}$1${RESET}"
 }
 
-
 # Other parts
 # Info seciton with requirements
 function importantInformationSection {
