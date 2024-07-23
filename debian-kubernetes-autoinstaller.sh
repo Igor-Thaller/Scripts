@@ -148,7 +148,7 @@ function showFinishMessage {
 
 
 # ----------------------------------------Program--------------------------------------------------
-echo "Installing kubernetes for debian"
+line
 importantInformationSection
 
 # Collect necessary information for the program to run
