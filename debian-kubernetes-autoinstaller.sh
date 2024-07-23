@@ -194,6 +194,6 @@ installMinikube
 
 showFinishMessage
 
-attemptMinkubeStart
+attemptMinikubeStart
 
 
