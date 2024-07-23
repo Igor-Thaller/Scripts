@@ -94,12 +94,14 @@ function installMinikube {
     sudo install minikube-linux-amd64 /usr/local/bin/minikube && rm minikube-linux-amd64
 }
 
+# Attempting to start minikube
 function attemptMinikubeStart {
     green_color "Attempting to start minikube"
     # TODO: Implement this without --force
     minikube start --force --driver=docker
 }
 
+# Installing the kubectl cli tool
 function installKubectl {
     # Install kubectl
     green_color "Installing kubectl cli tool"
@@ -110,6 +112,7 @@ function installKubectl {
     kubectl version --client --output=yaml
 }
 
+# Displaying the finish message after everything has been installed
 function showFinishMessage {
     green_color "Everything has been installed!"
 }
