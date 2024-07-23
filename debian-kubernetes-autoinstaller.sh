@@ -54,10 +54,10 @@ function installDocker {
     sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
     echo "Installing the apt docker package"
     sudo apt install docker
-    dashLine()
+    dashLine
     echo "Verifying the docker installation"
     sudo systemctl status docker
-    dashLine()
+    dashLine
 }
 
 function oldInstallDocker {
