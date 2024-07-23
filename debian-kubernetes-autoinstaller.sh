@@ -71,8 +71,8 @@ function installDocker {
 # Combining uninstall and install docker for reinstall
 function reinstallDocker {
     line
-    removeDocker()
-    installDocker()
+    removeDocker
+    installDocker
     line
 }
 
@@ -151,7 +151,7 @@ function installKubectl {
 function showFinishMessage {
     line
 
-    echo"Everything has been installed!"
+    echo "Everything has been installed!"
 
     line
 }
