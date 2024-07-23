@@ -55,7 +55,7 @@ function installDocker {
     echo "Installing the apt docker package"
     sudo apt install docker
     dashLine()
-    sudo "Verifying the docker installation"
+    echo "Verifying the docker installation"
     sudo systemctl status docker
     dashLine()
 }
