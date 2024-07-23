@@ -77,10 +77,19 @@ function fetchAssociatedVersionData {
         sudo curl -LO https://dl.k8s.io/release/${version}/bin/linux/amd64/kubectl
     fi
 
+
+}
+
+# Validate the binary
+function validateBinary {
     # Validate
     green_color "Validating the binary"
-    
-    sudo curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"
+
+    if [version == "stable"]; then
+        sudo curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"
+    else
+        sudo curl -LO "https://dl.k8s.io/release/${version}/bin/linux/amd64/kubectl.sha256"
+    fi
 
     green_color "Validation results"
     echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
