@@ -131,9 +131,6 @@ function showFinishMessage {
 
 
 
-
-
-
 # ----------------------------------------Program--------------------------------------------------
 echo "Installing kubernetes for debian"
 importantInformationSection
