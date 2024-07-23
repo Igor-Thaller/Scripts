@@ -45,6 +45,23 @@ function removeDocker {
 # Installing docker
 function installDocker {
     dashLine
+    echo "Installing docker"
+    echo "Updating packages"
+    sudo apt update
+    echo "Downloading prerequisite packages"
+    sudo apt install apt-transport-https ca-certificates curl gnupg
+    echo "Downloading the docker repository"
+    sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
+    echo "Installing the apt docker package"
+    sudo apt install docker
+    dashLine()
+    sudo "Verifying the docker installation"
+    sudo systemctl status docker
+    dashLine()
+}
+
+function oldInstallDocker {
+    dashLine
     sudo apt-get install ca-certificates curl
     sudo install -m 0755 -d /etc/apt/keyrings
     sudo curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
