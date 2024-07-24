@@ -2,6 +2,8 @@
 # Color text ouput
 RESET='\033[0m'
 
+# https://github.com/containerd/containerd/issues/8139
+
 # Green
 green_color() {
   GREEN='\033[0;32m'
@@ -14,9 +16,22 @@ red_color() {
     echo -e "${RED}$1${RESET}"
 }
 
+# Blue
+blue_color() {
+    BLUE="\033[34m"
+    echo -e "${BLUE}$1${RESET}"
+}
+
 # Other parts
 # Info seciton with requirements
 function importantInformationSection {
+    blue_color "
+ | |/ /    | |                        | |                /\        | |          |_   _|         | |      | | |
+ | . /_   _| |__   ___ _ __ _ __   ___| |_ ___  ___     /  \  _   _| |_ ___ ______| |  _ __  ___| |_ __ _| | | ___ _ __
+ |  <| | | | |_ \ / _ \ .__| ._ \ / _ \ __/ _ \/ __|   / /\ \| | | | __/ _ \______| | | ._ \/ __| __/ _. | | |/ _ \ .__|
+ | . \ |_| | |_) |  __/ |  | | | |  __/ ||  __/\__ \  / ____ \ |_| | || (_) |    _| |_| | | \__ \ || (_| | | |  __/ |
+ |_|\_\__._|_.__/ \___|_|  |_| |_|\___|\__\___||___/ /_/    \_\__,_|\__\___/    |_____|_| |_|___/\__\__,_|_|_|\___|_|
+                                                                                                                        "
     green_color "Important information"
     echo "1. Make sure that you run this program in sudo mode"
     echo "2. This will install version v1.30"
@@ -80,6 +95,7 @@ function updatePackages {
 
     green_color "Stopping chrony"
     sudo systemctl stop chrony
+    echo "Successfully stopped chrony"
 
     green_color "Speeding up the correcting of the time settings"
     sudo chronyd -q 'pool pool.ntp.org iburst'
@@ -129,37 +145,6 @@ EOF
     sudo sysctl --system
 }
 
-function installContainerd {
-    green_color "Installing containerd"
-    wget https://github.com/containerd/containerd/releases/download/v1.7.20/containerd-1.7.20-linux-amd64.tar.gz
-    sudo tar Cxzvf /usr/local/containerd-1.7.20-linux-amd64.tar.gz
-
-    green_color "Configuring systemd for containerd"
-    sudo wget https://raw.githubusercontent.com/containerd/containerd/main/containerd.service
-    # sudo mv containerd.service /usr/local/lib/systemd/system/containerd.service
-    sudo mv containerd.service /lib/systemd/system
-
-    green_color "Starting the service with containerd enabled"
-    sudo systemctl daemon-reload
-    sudo systemctl enable --now containerd.service
-
-    green_color "Verifying that containerd is running"
-    sudo systemctl status containerd.service
-}
-
-function installRunc {
-    green_color "Installing runc"
-    sudo wget https://github.com/opencontainers/runc/releases/download/v1.2.0-rc.2/runc.amd64
-    sudo install -m 755 runc.amd64 /usr/local/sbin/runc
-}
-
-function installCNIPlugin {
-    green_color "Installing CNI plugin"
-    sudo wget https://github.com/containernetworking/plugins/releases/download/v1.5.1/cni-plugins-linux-amd64-v1.5.1.tgz
-    sudo mkdir -p /opt/cni/bin
-    sudo tar Cxzvf /opt/cni/bin cni-plugins-linux-amd64-v1.5.1.tgz
-}
-
 function installKubeTools {
     green_color "Installing kube tools"
     sudo apt-get update
@@ -170,6 +155,7 @@ function installKubeTools {
     green_color "Fetching public signing key for kubernetes packages"
     sudo mkdir -p -m 755 /etc/apt/keyrings
     sudo curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+    echo "Successfully fetched public signing key"
 
     green_color "Overwriting existing configuration"
     echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
@@ -180,12 +166,39 @@ function installKubeTools {
     sudo apt-mark hold kubelet kubeadm kubectl
 
     # Optional
-    green_color "Enabling the kubelet service before running kubeadm"
+    green_color "Enabling the kubelet service before running"
     sudo systemctl enable --now kubelet
+    echo "Successfully enabled the kublet service"
 }
 
+# Function to set up the Kubernetes cluster
+function setupCluster {
+    green_color "Getting the currently running kubectl version"
+    kubectl version
 
+    green_color "Checking the IP address being used by kubeadm"
+    ip route show | grep "default via"
 
+    green_color "Resolving known issues regarding the initialization"
+    sudo crictl config --set runtime-endpoint=unix://run/containerd/containerd.sock
+    sudo cat > sudo /etc/containerd/config.toml <<EOF
+[plugins."io.containerd.grpc.v1.cri"]
+  systemd_cgroup = true
+EOF
+
+    green_color "Initializing the cluster"
+    sudo kubeadm init --pod-network-cidr=10.244.0.0/16
+
+    green_color "Setting up kubeconfig for the current user"
+    mkdir -p $HOME/.kube
+    sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+    sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+    green_color "Installing a Pod network add-on (e.g., Calico)"
+    # kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+
+    green_color "Cluster setup complete. You can now join worker nodes."
+}
 
 # ----------------------------------------Program--------------------------------------------------
 # Welcome information
@@ -211,6 +224,9 @@ checkIfPortIsAvailable
 
 # Install kube tools
 installKubeTools
+
+# Setup the cluster
+setupCluster
 
 # Finish message
 showFinishMessage
