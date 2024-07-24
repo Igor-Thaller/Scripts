@@ -217,11 +217,6 @@ enableRouting
 # Verify port availability
 checkIfPortIsAvailable
 
-# Install container runtime
-# installRunc
-# installCNIPlugin
-# installContainerd
-
 # Install kube tools
 installKubeTools
 
