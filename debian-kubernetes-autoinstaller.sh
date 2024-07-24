@@ -17,7 +17,7 @@ red_color() {
 # Other parts
 # Info seciton with requirements
 function importantInformationSection {
-    green_color "⚠️ Important information"
+    green_color "Important information"
     echo "1. Make sure that you run this program in sudo mode"
     echo "2. This will install version v1.30"
     echo "3. Port 6443 is not taken"
@@ -36,23 +36,20 @@ function importantInformationSection {
 function removeDocker {
     # Removing docker if installed
     green_color "Removing docker if installed"
-    for pkg in docker.io docker-doc docker-compose podman-docker containerd runc; do sudo apt-get remove $pkg; done
-    sudo apt-get purge aufs-tools docker-ce docker-ce-cli containerd.io pigz cgroupfs-mount -y
-    sudo apt-get purge kubeadm kubernetes-cni -y
+    for pkg in docker.io docker-doc docker-compose podman-docker containerd runc; do sudo apt remove $pkg; done
+    sudo apt purge aufs-tools docker-ce docker-ce-cli containerd.io pigz cgroupfs-mount -y
+    sudo apt purge kubeadm kubernetes-cni -y
     sudo rm -rf /etc/kubernetes
     sudo rm -rf $HOME/.kube/config
     sudo rm -rf /var/lib/etcd
     sudo rm -rf /var/lib/docker
     sudo rm -rf /opt/containerd
     sudo apt autoremove -y
-
-    # Removing docker ce
-    sudo apt remove docker-ce docker-ce-cli containerd.io -y
 }
 
 function installDocker {
     green_color "Installing docker"
-    sudo apt install ca-certificates curl
+    sudo apt install ca-certificates curl -y
     sudo install -m 0755 -d /etc/apt/keyrings
     sudo curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
     sudo chmod a+r /etc/apt/keyrings/docker.asc
@@ -60,12 +57,11 @@ function installDocker {
     green_color "Adding the repositories to the apt sources"
     # Add the repository to Apt sources:
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-    sudo apt update
-
+    echo "Successfully fetched the repositories"
     # Install latest version
     green_color "Installing latest docker version"
     sudo apt update
-    sudo apt install docker-ce docker-ce-cli containerd.io  -y
+    sudo apt install containerd.io -y
 
 }
 
@@ -78,9 +74,25 @@ function reinstallDocker {
 # Package updates
 function updatePackages {
     # Updating packages
+    # Necessary due to potential time problem
+    green_color "Installing chrony"
+    sudo apt install chrony -y
+
+    green_color "Stopping chrony"
+    sudo systemctl stop chrony
+
+    green_color "Speeding up the correcting of the time settings"
+    sudo chronyd -q 'pool pool.ntp.org iburst'
+
+    green_color "Verify that your computer has the correct time settings"
+    date
+
+    # Update
     green_color "Updating all apt packages"
     sudo apt update
     sudo apt dist-upgrade -y
+
+    sudo systemctl start chrony
 }
 
 # Displaying the finish message after everything has been installed
@@ -89,7 +101,7 @@ function showFinishMessage {
 }
 
 # Swap disabling
-function disableSwap() {
+function disableSwap {
     green_color "Disabling swap...."
     sudo swapoff -a
     sudo sed -i.bak '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
@@ -98,10 +110,11 @@ function disableSwap() {
 function checkIfPortIsAvailable {
     green_color "Checking if the port 6443 is already occupied"
     nc localhost 6443 -v &>/dev/null
-    output = echo $?
-
-    if [ $output != "1" ]; then
+    if [ "$?" -ne 1 ]; then
         red_color "The required port 6443 is already taken"
+    else
+        echo "Check status: ok"
+        echo "Port 6443 is not yet taken"
     fi
 }
 
@@ -119,34 +132,32 @@ EOF
 function installContainerd {
     green_color "Installing containerd"
     wget https://github.com/containerd/containerd/releases/download/v1.7.20/containerd-1.7.20-linux-amd64.tar.gz
-    tar Cxzvf /usr/local containerd-1.6.2-linux-amd64.tar.gz
-    
-    green_color "Checking if containerd has been installed successfully"
-    cri-dockerd -v
+    sudo tar Cxzvf /usr/local/containerd-1.7.20-linux-amd64.tar.gz
 
     green_color "Configuring systemd for containerd"
-    wget https://raw.githubusercontent.com/containerd/containerd/main/containerd.service
-    sudo mv containerd.service /usr/local/lib/systemd/system/containerd.service
+    sudo wget https://raw.githubusercontent.com/containerd/containerd/main/containerd.service
+    # sudo mv containerd.service /usr/local/lib/systemd/system/containerd.service
+    sudo mv containerd.service /lib/systemd/system
 
     green_color "Starting the service with containerd enabled"
-    systemctl daemon-reload
-    systemctl enable --now containerd.service
+    sudo systemctl daemon-reload
+    sudo systemctl enable --now containerd.service
 
     green_color "Verifying that containerd is running"
-    systemctl status containerd.service
+    sudo systemctl status containerd.service
 }
 
 function installRunc {
     green_color "Installing runc"
-    wget https://github.com/opencontainers/runc/releases/download/v1.2.0-rc.2/runc.amd64
+    sudo wget https://github.com/opencontainers/runc/releases/download/v1.2.0-rc.2/runc.amd64
     sudo install -m 755 runc.amd64 /usr/local/sbin/runc
 }
 
 function installCNIPlugin {
     green_color "Installing CNI plugin"
-    wget https://github.com/containernetworking/plugins/releases/download/v1.5.1/cni-plugins-linux-amd64-v1.5.1.tgz
+    sudo wget https://github.com/containernetworking/plugins/releases/download/v1.5.1/cni-plugins-linux-amd64-v1.5.1.tgz
     sudo mkdir -p /opt/cni/bin
-    tar Cxzvf /opt/cni/bin cni-plugins-linux-amd64-v1.1.1.tgz
+    sudo tar Cxzvf /opt/cni/bin cni-plugins-linux-amd64-v1.5.1.tgz
 }
 
 function installKubeTools {
@@ -158,8 +169,8 @@ function installKubeTools {
 
     green_color "Fetching public signing key for kubernetes packages"
     sudo mkdir -p -m 755 /etc/apt/keyrings
-    curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
-    
+    sudo curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
     green_color "Overwriting existing configuration"
     echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
 
@@ -182,7 +193,7 @@ importantInformationSection
 
 # Docker
 updatePackages
-#reinstallDocker
+reinstallDocker
 
 # Kubernetes (v1.30)
 disableSwap
@@ -194,12 +205,12 @@ enableRouting
 checkIfPortIsAvailable
 
 # Install container runtime
-installContainerd
-installRunc
-installCNIPlugin # Currently here's a problem with the tar unpacking
+# installRunc
+# installCNIPlugin
+# installContainerd
 
 # Install kube tools
-#installKubeTools
+installKubeTools
 
 # Finish message
 showFinishMessage
