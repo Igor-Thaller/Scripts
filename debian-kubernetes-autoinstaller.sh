@@ -34,7 +34,7 @@ function importantInformationSection {
     "
     green_color "Important information"
     echo "1. Make sure that you run this program in sudo mode"
-    echo "2. This will install version v1.30"
+    echo "2. This will install version v1.30 with calico running"
     echo "3. Port 6443 is not taken"
     echo "4. MAC address and product_uuid are unique for every node"
     echo "5. Two CPUs or more required"
@@ -53,6 +53,7 @@ function removeDocker {
     green_color "Removing docker if installed"
     for pkg in docker.io docker-doc docker-compose podman-docker containerd runc; do sudo apt remove $pkg; done
     sudo apt purge aufs-tools docker-ce docker-ce-cli containerd.io pigz cgroupfs-mount -y
+    sudo apt purge aufs-tools containerd runc
     sudo apt purge kubeadm kubernetes-cni -y
     sudo rm -rf /etc/kubernetes
     sudo rm -rf $HOME/.kube/config
@@ -78,28 +79,43 @@ function installDocker {
     # Install latest version
     green_color "Installing latest docker version"
     sudo apt update
-    sudo apt install docker-ce docker-ce-cli containerd.io -y
+    # sudo apt install containerd.io -y
 
     # Setting up the docker daemon
-    green_color "Setting up the docker daemon"
-    sudo mkdir -p /etc/systemd/system/docker.service.d
-    cat > /etc/docker/daemon.json <<EOF
-    {
-    "exec-opts": ["native.cgroupdriver=systemd"],
-    "log-driver": "json-file",
-    "log-opts": {
-        "max-size": "100m"
-    },
-    "storage-driver": "overlay2"
-    }
-EOF
+    # green_color "Setting up the docker daemon"
+    # sudo mkdir -p /etc/systemd/system/docker.service.d
+    # cat > /etc/docker/daemon.json <<EOF
+    # {
+    # "exec-opts": ["native.cgroupdriver=systemd"],
+    # "log-driver": "json-file",
+    # "log-opts": {
+        # "max-size": "100m"
+    # },
+    # "storage-driver": "overlay2"
+    # }
+# EOF
 
-    green_color "Setting up docker user"
-    sudo usermod -aG docker $USER
+    # green_color "Configuring the containerd config.toml file"
+    # sudo mkdir -p /etc/containerd
+    # sudo containerd config default | sudo tee /etc/containerd/config.toml
+    # CONFIG_FILE="/etc/containerd/config.toml"
+    # sudo sed -i '/\[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options\]/,/^\[/{s/^ *SystemdCgroup *= *false/    SystemdCgroup = true/}' $CONFIG_FILE
+    # green_color "Configuration updated successfully"
 
-    green_color "Restarting docker"
-    sudo systemctl daemon-reload
-    sudo systemctl restart docker
+    # green_color "Starting the service with containerd enabled"
+    # sudo systemctl daemon-reload
+    # sudo systemctl restart containerd
+    # sudo systemctl enable --now containerd.service
+
+    # green_color "Verifying that containerd is running"
+    # sudo systemctl status containerd.service
+
+    # green_color "Setting up docker user"
+    # sudo usermod -aG docker $USER
+
+    # green_color "Restarting docker"
+    # sudo systemctl daemon-reload
+    # sudo systemctl restart docker
 }
 
 # Combining uninstall and install docker for reinstall
@@ -219,14 +235,13 @@ function setupCluster {
 function installContainerd {
     green_color "Installing containerd"
     wget https://github.com/containerd/containerd/releases/download/v1.7.20/containerd-1.7.20-linux-amd64.tar.gz
-    sudo tar Cxzvf /usr/local/containerd-1.7.20-linux-amd64.tar.gz
+    sudo tar xvf containerd-1.7.20-linux-amd64.tar.gz -C /usr/local/
 
     green_color "Configuring systemd for containerd"
     sudo wget https://raw.githubusercontent.com/containerd/containerd/main/containerd.service
+    sudo mkdir -p /usr/local/lib/systemd/system/
     sudo mv containerd.service /usr/local/lib/systemd/system/containerd.service
-    # sudo mv containerd.service /lib/systemd/system
 
-    # New
     green_color "Configuring the containerd config.toml file"
     sudo mkdir -p /etc/containerd
     sudo containerd config default | sudo tee /etc/containerd/config.toml
