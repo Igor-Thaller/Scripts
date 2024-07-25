@@ -216,13 +216,56 @@ function setupCluster {
     green_color "Cluster setup complete. You can now join worker nodes."
 }
 
+# Install containerd
+function installContainerd {
+    green_color "Installing containerd"
+    wget https://github.com/containerd/containerd/releases/download/v1.7.20/containerd-1.7.20-linux-amd64.tar.gz
+    sudo tar Cxzvf /usr/local/containerd-1.7.20-linux-amd64.tar.gz
+
+    green_color "Configuring systemd for containerd"
+    sudo wget https://raw.githubusercontent.com/containerd/containerd/main/containerd.service
+    sudo mv containerd.service /usr/local/lib/systemd/system/containerd.service
+    # sudo mv containerd.service /lib/systemd/system
+
+    # New
+    green_color "Configuring the containerd config.toml file"
+    sudo mkdir -p /etc/containerd
+    sudo containerd config default | sudo tee /etc/containerd/config.toml
+    CONFIG_FILE="/etc/containerd/config.toml"
+    sudo sed -i '/\[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options\]/,/^\[/{s/^ *SystemdCgroup *= *false/    SystemdCgroup = true/}' $CONFIG_FILE
+    echo "Configuration updated successfully"
+
+    green_color "Starting the service with containerd enabled"
+    sudo systemctl daemon-reload
+    sudo systemctl restart containerd
+    sudo systemctl enable --now containerd.service
+
+    green_color "Verifying that containerd is running"
+    sudo systemctl status containerd.service
+}
+
+# Install runc
+function installRunc {
+    green_color "Installing runc"
+    sudo wget https://github.com/opencontainers/runc/releases/download/v1.2.0-rc.2/runc.amd64
+    sudo install -m 755 runc.amd64 /usr/local/sbin/runc
+}
+
+# Install CNI plugin
+function installCNIPlugin {
+    green_color "Installing CNI plugin"
+    sudo wget https://github.com/containernetworking/plugins/releases/download/v1.5.1/cni-plugins-linux-amd64-v1.5.1.tgz
+    sudo mkdir -p /opt/cni/bin
+    sudo tar Cxzvf /opt/cni/bin cni-plugins-linux-amd64-v1.5.1.tgz
+}
+
 # ----------------------------------------Program--------------------------------------------------
 # Welcome information
 importantInformationSection
 
 # Docker
 updatePackages
-# reinstallDocker
+reinstallDocker
 
 # Kubernetes (v1.30)
 disableSwap
@@ -232,6 +275,11 @@ enableRouting
 
 # Verify port availability
 checkIfPortIsAvailable
+
+# Install runc, cni and containerd
+installRunc
+installCNIPlugin
+installContainerd
 
 # Install kube tools
 installKubeTools
