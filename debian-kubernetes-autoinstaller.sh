@@ -195,6 +195,17 @@ function installCNIPlugin {
     sudo tar Cxzvf /opt/cni/bin cni-plugins-linux-amd64-v1.5.1.tgz
 }
 
+function startWhatsNext {
+    green_color "Fetching an example template for container creation"
+    wget https://raw.githubusercontent.com/kubernetes/website/main/content/en/examples/application/shell-demo.yaml
+
+    green_color "What's next?"
+    echo "1. To setup the simple example container run   : kubectl apply -f https://k8s.io/examples/application/shell-demo.yaml"
+    echo "2. To verify that the container is running run : kubectl get pod shell-demo"
+    echo "3. To get a shell to the example container run : kubectl exec --stdin --tty shell-demo -- /bin/bash"
+    green_color "For more information visit: https://kubernetes.io/docs/tasks/debug/debug-application/get-shell-running-container/"
+}
+
 # ----------------------------------------Program--------------------------------------------------
 # Welcome information
 importantInformationSection
@@ -221,6 +232,9 @@ installKubeTools
 
 # Setup the cluster
 setupCluster
+
+# Show what's next
+startWhatsNext
 
 # Finish message
 showFinishMessage
