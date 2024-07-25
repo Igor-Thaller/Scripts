@@ -26,12 +26,12 @@ blue_color() {
 # Info seciton with requirements
 function importantInformationSection {
     blue_color "
- | |/ /    | |                        | |                /\        | |          |_   _|         | |      | | |
- | . /_   _| |__   ___ _ __ _ __   ___| |_ ___  ___     /  \  _   _| |_ ___ ______| |  _ __  ___| |_ __ _| | | ___ _ __
- |  <| | | | |_ \ / _ \ .__| ._ \ / _ \ __/ _ \/ __|   / /\ \| | | | __/ _ \______| | | ._ \/ __| __/ _. | | |/ _ \ .__|
- | . \ |_| | |_) |  __/ |  | | | |  __/ ||  __/\__ \  / ____ \ |_| | || (_) |    _| |_| | | \__ \ || (_| | | |  __/ |
- |_|\_\__._|_.__/ \___|_|  |_| |_|\___|\__\___||___/ /_/    \_\__,_|\__\___/    |_____|_| |_|___/\__\__,_|_|_|\___|_|
-                                                                                                                        "
+    | |/ /    | |                        | |                /\        | |          |_   _|         | |      | | |
+    | . /_   _| |__   ___ _ __ _ __   ___| |_ ___  ___     /  \  _   _| |_ ___ ______| |  _ __  ___| |_ __ _| | | ___ _ __
+    |  <| | | | |_ \ / _ \ .__| ._ \ / _ \ __/ _ \/ __|   / /\ \| | | | __/ _ \______| | | ._ \/ __| __/ _. | | |/ _ \ .__|
+    | . \ |_| | |_) |  __/ |  | | | |  __/ ||  __/\__ \  / ____ \ |_| | || (_) |    _| |_| | | \__ \ || (_| | | |  __/ |
+    |_|\_\__._|_.__/ \___|_|  |_| |_|\___|\__\___||___/ /_/    \_\__,_|\__\___/    |_____|_| |_|___/\__\__,_|_|_|\___|_|
+    "
     green_color "Important information"
     echo "1. Make sure that you run this program in sudo mode"
     echo "2. This will install version v1.30"
@@ -70,14 +70,36 @@ function installDocker {
     sudo chmod a+r /etc/apt/keyrings/docker.asc
 
     green_color "Adding the repositories to the apt sources"
+
     # Add the repository to Apt sources:
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
     echo "Successfully fetched the repositories"
+
     # Install latest version
     green_color "Installing latest docker version"
     sudo apt update
-    sudo apt install containerd.io -y
+    sudo apt install docker-ce docker-ce-cli containerd.io -y
 
+    # Setting up the docker daemon
+    green_color "Setting up the docker daemon"
+    sudo mkdir -p /etc/systemd/system/docker.service.d
+    cat > /etc/docker/daemon.json <<EOF
+    {
+    "exec-opts": ["native.cgroupdriver=systemd"],
+    "log-driver": "json-file",
+    "log-opts": {
+        "max-size": "100m"
+    },
+    "storage-driver": "overlay2"
+    }
+EOF
+
+    green_color "Setting up docker user"
+    sudo usermod -aG docker $USER
+
+    green_color "Restarting docker"
+    sudo systemctl daemon-reload
+    sudo systemctl restart docker
 }
 
 # Combining uninstall and install docker for reinstall
@@ -179,15 +201,9 @@ function setupCluster {
     green_color "Checking the IP address being used by kubeadm"
     ip route show | grep "default via"
 
-    green_color "Resolving known issues regarding the initialization"
-    sudo crictl config --set runtime-endpoint=unix://run/containerd/containerd.sock
-    sudo cat > sudo /etc/containerd/config.toml <<EOF
-[plugins."io.containerd.grpc.v1.cri"]
-  systemd_cgroup = true
-EOF
-
     green_color "Initializing the cluster"
-    sudo kubeadm init --pod-network-cidr=10.244.0.0/16
+    sudo kubeadm init
+    # --pod-network-cidr=10.244.0.0/16
 
     green_color "Setting up kubeconfig for the current user"
     mkdir -p $HOME/.kube
@@ -206,7 +222,7 @@ importantInformationSection
 
 # Docker
 updatePackages
-reinstallDocker
+# reinstallDocker
 
 # Kubernetes (v1.30)
 disableSwap
