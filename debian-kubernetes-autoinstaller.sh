@@ -26,11 +26,11 @@ blue_color() {
 # Info seciton with requirements
 function importantInformationSection {
     blue_color "
-    | |/ /    | |                        | |                /\        | |          |_   _|         | |      | | |
-    | . /_   _| |__   ___ _ __ _ __   ___| |_ ___  ___     /  \  _   _| |_ ___ ______| |  _ __  ___| |_ __ _| | | ___ _ __
-    |  <| | | | |_ \ / _ \ .__| ._ \ / _ \ __/ _ \/ __|   / /\ \| | | | __/ _ \______| | | ._ \/ __| __/ _. | | |/ _ \ .__|
-    | . \ |_| | |_) |  __/ |  | | | |  __/ ||  __/\__ \  / ____ \ |_| | || (_) |    _| |_| | | \__ \ || (_| | | |  __/ |
-    |_|\_\__._|_.__/ \___|_|  |_| |_|\___|\__\___||___/ /_/    \_\__,_|\__\___/    |_____|_| |_|___/\__\__,_|_|_|\___|_|
+| |/ /    | |                        | |                /\        | |          |_   _|         | |      | | |
+| . /_   _| |__   ___ _ __ _ __   ___| |_ ___  ___     /  \  _   _| |_ ___ ______| |  _ __  ___| |_ __ _| | | ___ _ __
+|  <| | | | |_ \ / _ \ .__| ._ \ / _ \ __/ _ \/ __|   / /\ \| | | | __/ _ \______| | | ._ \/ __| __/ _. | | |/ _ \ .__|
+| . \ |_| | |_) |  __/ |  | | | |  __/ ||  __/\__ \  / ____ \ |_| | || (_) |    _| |_| | | \__ \ || (_| | | |  __/ |
+|_|\_\__._|_.__/ \___|_|  |_| |_|\___|\__\___||___/ /_/    \_\__,_|\__\___/    |_____|_| |_|___/\__\__,_|_|_|\___|_|
     "
     green_color "Important information"
     echo "1. Make sure that you run this program in sudo mode"
@@ -44,84 +44,6 @@ function importantInformationSection {
 
     echo "More details here: https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/"
     red_color "IF ANY OF THE POINTS LISTED ABOVE AREN'T FULFILLED IT WILL NOT WORK!"
-}
-
-# Docker
-# Removing docker
-function removeDocker {
-    # Removing docker if installed
-    green_color "Removing docker if installed"
-    for pkg in docker.io docker-doc docker-compose podman-docker containerd runc; do sudo apt remove $pkg; done
-    sudo apt purge aufs-tools docker-ce docker-ce-cli containerd.io pigz cgroupfs-mount -y
-    sudo apt purge aufs-tools containerd runc
-    sudo apt purge kubeadm kubernetes-cni -y
-    sudo rm -rf /etc/kubernetes
-    sudo rm -rf $HOME/.kube/config
-    sudo rm -rf /var/lib/etcd
-    sudo rm -rf /var/lib/docker
-    sudo rm -rf /opt/containerd
-    sudo apt autoremove -y
-}
-
-function installDocker {
-    green_color "Installing docker"
-    sudo apt install ca-certificates curl -y
-    sudo install -m 0755 -d /etc/apt/keyrings
-    sudo curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
-    sudo chmod a+r /etc/apt/keyrings/docker.asc
-
-    green_color "Adding the repositories to the apt sources"
-
-    # Add the repository to Apt sources:
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-    echo "Successfully fetched the repositories"
-
-    # Install latest version
-    green_color "Installing latest docker version"
-    sudo apt update
-    # sudo apt install containerd.io -y
-
-    # Setting up the docker daemon
-    # green_color "Setting up the docker daemon"
-    # sudo mkdir -p /etc/systemd/system/docker.service.d
-    # cat > /etc/docker/daemon.json <<EOF
-    # {
-    # "exec-opts": ["native.cgroupdriver=systemd"],
-    # "log-driver": "json-file",
-    # "log-opts": {
-        # "max-size": "100m"
-    # },
-    # "storage-driver": "overlay2"
-    # }
-# EOF
-
-    # green_color "Configuring the containerd config.toml file"
-    # sudo mkdir -p /etc/containerd
-    # sudo containerd config default | sudo tee /etc/containerd/config.toml
-    # CONFIG_FILE="/etc/containerd/config.toml"
-    # sudo sed -i '/\[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options\]/,/^\[/{s/^ *SystemdCgroup *= *false/    SystemdCgroup = true/}' $CONFIG_FILE
-    # green_color "Configuration updated successfully"
-
-    # green_color "Starting the service with containerd enabled"
-    # sudo systemctl daemon-reload
-    # sudo systemctl restart containerd
-    # sudo systemctl enable --now containerd.service
-
-    # green_color "Verifying that containerd is running"
-    # sudo systemctl status containerd.service
-
-    # green_color "Setting up docker user"
-    # sudo usermod -aG docker $USER
-
-    # green_color "Restarting docker"
-    # sudo systemctl daemon-reload
-    # sudo systemctl restart docker
-}
-
-# Combining uninstall and install docker for reinstall
-function reinstallDocker {
-    removeDocker
-    installDocker
 }
 
 # Package updates
@@ -279,7 +201,6 @@ importantInformationSection
 
 # Docker
 updatePackages
-reinstallDocker
 
 # Kubernetes (v1.30)
 disableSwap
