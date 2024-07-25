@@ -202,8 +202,7 @@ function setupCluster {
     ip route show | grep "default via"
 
     green_color "Initializing the cluster"
-    sudo kubeadm init
-    # --pod-network-cidr=10.244.0.0/16
+    sudo kubeadm init --pod-network-cidr=10.244.0.0/16
 
     green_color "Setting up kubeconfig for the current user"
     mkdir -p $HOME/.kube
@@ -211,7 +210,7 @@ function setupCluster {
     sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
     green_color "Installing a Pod network add-on (e.g., Calico)"
-    # kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+    kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
 
     green_color "Cluster setup complete. You can now join worker nodes."
 }
