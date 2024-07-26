@@ -196,19 +196,20 @@ function installCNIPlugin {
 }
 
 function startWhatsNext {
-    green_color "Fetching an example template for container creation"
-    wget https://raw.githubusercontent.com/kubernetes/website/main/content/en/examples/application/shell-demo.yaml
-
     green_color "What's next?"
-    echo "1. To setup the simple example container run   : kubectl apply -f https://k8s.io/examples/application/shell-demo.yaml"
-    echo "2. To verify that the container is running run : kubectl get pod shell-demo"
-    echo "3. To get a shell to the example container run : kubectl exec --stdin --tty shell-demo -- /bin/bash"
+    echo "1. To easily create the kubernetes pod just run: kubectl apply -f https://k8s.io/examples/application/shell-demo.yaml"
+    echo "2. To verify that the container is running run: kubectl get pod shell-demo"
+    echo "3. To get a shell to the example container run: kubectl exec --stdin --tty shell-demo -- /bin/bash"
+    echo "4. To get just a single node cluster run: kubectl taint nodes --all node-role.kubernetes.io/control-plane-"
     green_color "For more information visit: https://kubernetes.io/docs/tasks/debug/debug-application/get-shell-running-container/"
 }
 
 # ----------------------------------------Program--------------------------------------------------
 # Welcome information
 importantInformationSection
+
+# Ask for if master node
+read -p "Is the node you are trying to setup the master node? (Y/n): " isMasterNode === "Y"
 
 # Docker
 updatePackages
@@ -231,7 +232,9 @@ installContainerd
 installKubeTools
 
 # Setup the cluster
-setupCluster
+if [ $isMasterNode ]; then
+    setupCluster
+fi
 
 # Show what's next
 startWhatsNext
