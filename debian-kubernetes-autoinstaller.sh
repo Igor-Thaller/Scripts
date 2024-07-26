@@ -177,7 +177,7 @@ function installContainerd {
     sudo systemctl enable --now containerd.service
 
     green_color "Verifying that containerd is running"
-    sudo systemctl status containerd.service
+    sudo systemctl --no-pager status containerd.service
 }
 
 # Install runc
@@ -204,12 +204,56 @@ function startWhatsNext {
     green_color "For more information visit: https://kubernetes.io/docs/tasks/debug/debug-application/get-shell-running-container/"
 }
 
+function getCurrentMode {
+    # The optstring
+    OPTSTRING=":m:"
+
+    # The mode variable
+    local mode=""
+
+    # Loop over all options
+    while getopts ${OPTSTRING} opt; do
+        case ${opt} in
+            m)
+                mode=${OPTARG}
+                ;;
+            :)
+                echo "Option -${OPTARG} requires an argument."
+                exit 1
+                ;;
+            ?)
+                echo "Invalid option: -${OPTARG}."
+                exit 1
+                ;;
+        esac
+    done
+
+    # Manual check for mandatory options
+    if [ "${mode}" == "" ]; then
+        echo "Error: Option -m is mandatory and requires either 'master' or 'worker' as argument"
+        exit 1
+    fi
+
+    local validModes=("master" "worker")
+
+    if [[ ! " ${validModes[@]} " =~ " ${mode} " ]]; then
+        echo "Invalid argument passed. The -m flag only accepts the following modes: ${validModes[@]}"
+        exit 1
+    fi
+
+    echo $mode
+}
+
+
 # ----------------------------------------Program--------------------------------------------------
+mode=$(getCurrentMode)
+
+if [ "${mode}" != "master" || "${mode}" != "worker" ]; then
+    exit 1
+fi
+
 # Welcome information
 importantInformationSection
-
-# Ask for if master node
-read -p "Is the node you are trying to setup the master node? (Y/n): " isMasterNode === "Y"
 
 # Docker
 updatePackages
@@ -232,7 +276,7 @@ installContainerd
 installKubeTools
 
 # Setup the cluster
-if [ $isMasterNode ]; then
+if [ $mode == "master" ]; 
     setupCluster
 fi
 
