@@ -1,8 +1,8 @@
-# ---------------------------------------------Functions--------------------------------------------
-# Color text ouput
-RESET='\033[0m'
+#!/bin/bash
 
-# https://github.com/containerd/containerd/issues/8139
+# ---------------------------------------------Functions--------------------------------------------
+# Color text output
+RESET='\033[0m'
 
 # Green
 green_color() {
@@ -22,8 +22,7 @@ blue_color() {
     echo -e "${BLUE}$1${RESET}"
 }
 
-# Other parts
-# Info seciton with requirements
+# Info section with requirements
 function importantInformationSection {
     blue_color "
 | |/ /    | |                        | |                /\        | |          |_   _|         | |      | | |
@@ -205,50 +204,43 @@ function startWhatsNext {
 }
 
 function getCurrentMode {
-    # The optstring
-    OPTSTRING=":m:"
-
-    # The mode variable
     local mode=""
 
-    # Loop over all options
-    while getopts ${OPTSTRING} opt; do
+    while getopts "m:" opt; do
         case ${opt} in
             m)
                 mode=${OPTARG}
                 ;;
-            :)
-                echo "Option -${OPTARG} requires an argument."
+            \?)
+                echo "Invalid option: -$OPTARG" >&2
                 exit 1
                 ;;
-            ?)
-                echo "Invalid option: -${OPTARG}."
+            :)
+                echo "Option -$OPTARG requires an argument." >&2
                 exit 1
                 ;;
         esac
     done
 
-    # Manual check for mandatory options
-    if [ "${mode}" == "" ]; then
-        echo "Error: Option -m is mandatory and requires either 'master' or 'worker' as argument"
+    if [ -z "$mode" ]; then
+        echo "Error: Option -m is mandatory and requires either 'master' or 'worker' as argument" >&2
         exit 1
     fi
 
     local validModes=("master" "worker")
-
     if [[ ! " ${validModes[@]} " =~ " ${mode} " ]]; then
-        echo "Invalid argument passed. The -m flag only accepts the following modes: ${validModes[@]}"
+        echo "Invalid argument passed. The -m flag only accepts the following modes: ${validModes[@]}" >&2
         exit 1
     fi
 
     echo $mode
 }
 
-
 # ----------------------------------------Program--------------------------------------------------
-mode=$(getCurrentMode)
+mode=$(getCurrentMode "$@")
 
-if [ "${mode}" != "master" || "${mode}" != "worker" ]; then
+# Check if mode is empty
+if [ -z "$mode" ]; then
     exit 1
 fi
 
@@ -276,7 +268,7 @@ installContainerd
 installKubeTools
 
 # Setup the cluster
-if [ $mode == "master" ]; 
+if [ "$mode" == "master" ]; then
     setupCluster
 fi
 
